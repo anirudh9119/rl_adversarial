@@ -126,7 +126,7 @@ def main():
     #set seeds
     npr.seed(args.seed)
     tf.set_random_seed(args.seed)
-    
+
     #data collection, either with or without multi-threading
     if(use_threading):
         from collect_samples_threaded import CollectSamples
@@ -140,7 +140,7 @@ def main():
 
     # n is noisy, c is clean... 1st letter is what action's executed and 2nd letter is what action's aggregated
     actions_ag='nc'
-    
+
     #################################################
     ######## save param values to a file ############
     #################################################
@@ -224,7 +224,7 @@ def main():
                 print("\n#####################################")
                 print("Retrieving training data & policy from saved files")
                 print("#####################################\n")
-            
+
             dataX= np.load(save_dir + '/training_data/dataX.npy') # input1: state
             dataY= np.load(save_dir + '/training_data/dataY.npy') # input2: control
             dataZ= np.load(save_dir + '/training_data/dataZ.npy') # output: nextstate-state
@@ -241,7 +241,7 @@ def main():
                 print("#####################################\n")
 
             #perform rollouts
-            states, controls, _, _ = perform_rollouts(random_policy, num_rollouts_train, steps_per_rollout_train, visualize_False, 
+            states, controls, _, _ = perform_rollouts(random_policy, num_rollouts_train, steps_per_rollout_train, visualize_False,
                                                     CollectSamples, env, which_agent, dt_steps, dt_from_xml, follow_trajectories)
 
             if(not(print_minimal)):
@@ -250,9 +250,9 @@ def main():
                 print("#####################################\n")
 
             start_validation_rollouts = time.time()
-            states_val, controls_val, _, _ = perform_rollouts(random_policy, num_rollouts_val, steps_per_rollout_val, visualize_False, 
+            states_val, controls_val, _, _ = perform_rollouts(random_policy, num_rollouts_val, steps_per_rollout_val, visualize_False,
                                                             CollectSamples, env, which_agent, dt_steps, dt_from_xml, follow_trajectories)
-            
+
             if(not(print_minimal)):
                 print("\n#####################################")
                 print("Convert from env observations to NN 'states' ")
@@ -287,9 +287,9 @@ def main():
                 print("Perform rollout & save for forward sim")
                 print("#####################################\n")
 
-            states_forwardsim_orig, controls_forwardsim, _,_ = perform_rollouts(random_policy, 1, 100, 
-                                                                            visualize_False, CollectSamples, 
-                                                                            env, which_agent, dt_steps, 
+            states_forwardsim_orig, controls_forwardsim, _,_ = perform_rollouts(random_policy, 1, 100,
+                                                                            visualize_False, CollectSamples,
+                                                                            env, which_agent, dt_steps,
                                                                             dt_from_xml, follow_trajectories)
             states_forwardsim = np.copy(from_observation_to_usablestate(states_forwardsim_orig, which_agent, False))
             forwardsim_x_true, forwardsim_y = generate_training_data_inputs(states_forwardsim, controls_forwardsim)
@@ -330,7 +330,7 @@ def main():
         dataX_new = np.zeros((0,dataX.shape[1]))
         dataY_new = np.zeros((0,dataY.shape[1]))
         dataZ_new = np.zeros((0,dataZ.shape[1]))
-        
+
         #################################################
         ### preprocess the old training dataset
         #################################################
@@ -346,12 +346,12 @@ def main():
         std_x = np.std(dataX, axis = 0)
         dataX = np.nan_to_num(dataX/std_x)
 
-        mean_y = np.mean(dataY, axis = 0) 
+        mean_y = np.mean(dataY, axis = 0)
         dataY = dataY - mean_y
         std_y = np.std(dataY, axis = 0)
         dataY = np.nan_to_num(dataY/std_y)
 
-        mean_z = np.mean(dataZ, axis = 0) 
+        mean_z = np.mean(dataZ, axis = 0)
         dataZ = dataZ - mean_z
         std_z = np.std(dataZ, axis = 0)
         dataZ = np.nan_to_num(dataZ/std_z)
@@ -376,19 +376,19 @@ def main():
         assert inputs.shape[0] == outputs.shape[0]
         inputSize = inputs.shape[1]
         outputSize = outputs.shape[1]
-    
+
         #initialize dynamics model
         dyn_model = Dyn_Model(inputSize, outputSize, sess, lr, batchsize, which_agent, x_index, y_index, num_fc_layers,
                             depth_fc_layers, mean_x, mean_y, mean_z, std_x, std_y, std_z, tf_datatype, print_minimal)
 
         #create mpc controller
-        mpc_controller = MPCController(env, dyn_model, horizon, which_agent, steps_per_episode, dt_steps, num_control_samples, 
-                                        mean_x, mean_y, mean_z, std_x, std_y, std_z, actions_ag, print_minimal, x_index, y_index, 
-                                        z_index, yaw_index, joint1_index, joint2_index, frontleg_index, frontshin_index, 
+        mpc_controller = MPCController(env, dyn_model, horizon, which_agent, steps_per_episode, dt_steps, num_control_samples,
+                                        mean_x, mean_y, mean_z, std_x, std_y, std_z, actions_ag, print_minimal, x_index, y_index,
+                                        z_index, yaw_index, joint1_index, joint2_index, frontleg_index, frontshin_index,
                                         frontfoot_index, xvel_index, orientation_index)
 
         #randomly initialize all vars
-        sess.run(tf.global_variables_initializer()) 
+        sess.run(tf.global_variables_initializer())
 
         while(counter_agg_iters<num_aggregation_iters):
 
@@ -434,7 +434,7 @@ def main():
                 old_loss=0
                 new_loss=0
             else:
-                training_loss, old_loss, new_loss = dyn_model.train(inputs, outputs, inputs_new, outputs_new, 
+                training_loss, old_loss, new_loss = dyn_model.train(inputs, outputs, inputs_new, outputs_new,
                                                                     nEpoch, save_dir, fraction_use_new)
 
             #how good is model on training data
@@ -528,9 +528,9 @@ def main():
             #####################################
 
             many_in_parallel = True
-            predicted_100step = dyn_model.do_forward_sim(validation_inputs_states, controls_100step, 
+            predicted_100step = dyn_model.do_forward_sim(validation_inputs_states, controls_100step,
                                                         many_in_parallel, env, which_agent)
-            
+
             #####################################
             ## Calculate validation metrics (mse loss between predicted and true)
             #####################################
@@ -538,15 +538,15 @@ def main():
             array_meanx = np.tile(np.expand_dims(mean_x, axis=0),(labels_1step.shape[0],1))
             array_stdx = np.tile(np.expand_dims(std_x, axis=0),(labels_1step.shape[0],1))
 
-            error_1step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[1]-array_meanx,array_stdx)) 
+            error_1step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[1]-array_meanx,array_stdx))
                                 -np.nan_to_num(np.divide(labels_1step-array_meanx,array_stdx))))
             error_5step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[5]-array_meanx,array_stdx))
                                 -np.nan_to_num(np.divide(labels_5step-array_meanx,array_stdx))))
             error_10step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[10]-array_meanx,array_stdx))
                                     -np.nan_to_num(np.divide(labels_10step-array_meanx,array_stdx))))
-            error_50step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[50]-array_meanx,array_stdx)) 
+            error_50step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[50]-array_meanx,array_stdx))
                                     -np.nan_to_num(np.divide(labels_50step-array_meanx,array_stdx))))
-            error_100step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[100]-array_meanx,array_stdx)) 
+            error_100step = np.mean(np.square(np.nan_to_num(np.divide(predicted_100step[100]-array_meanx,array_stdx))
                                     -np.nan_to_num(np.divide(labels_100step-array_meanx,array_stdx))))
             print("Multistep error values: ", error_1step, error_5step, error_10step, error_50step, error_100step,"\n")
 
@@ -565,12 +565,12 @@ def main():
                     print("\n#####################################")
                     print("Performing a forward sim of the learned model. using pre-saved dataset. just for visualization")
                     print("#####################################\n")
-            
+
                 #for a given set of controls,
-                #compare sim traj vs. learned model's traj 
+                #compare sim traj vs. learned model's traj
                 #(dont expect this to be good cuz error accum)
                 many_in_parallel = False
-                forwardsim_x_pred = dyn_model.do_forward_sim(forwardsim_x_true, forwardsim_y, many_in_parallel, env, which_agent)    
+                forwardsim_x_pred = dyn_model.do_forward_sim(forwardsim_x_true, forwardsim_y, many_in_parallel, env, which_agent)
                 forwardsim_x_pred = np.array(forwardsim_x_pred)
 
                 # save results of forward sim
@@ -606,7 +606,7 @@ def main():
                 if(not(print_minimal)):
                     print("\nPerforming MPC rollout #", rollout_num)
 
-                #reset env and set the desired traj 
+                #reset env and set the desired traj
                 if(which_agent==2):
                     starting_observation, starting_state = env.reset(evaluating=True, returnStartState=True, isSwimmer=True)
                 else:
@@ -626,10 +626,10 @@ def main():
                     curr_noise_amount = 0.005
                 else:
                     curr_noise_amount=0
-                resulting_x, selected_u, ep_rew, _ = mpc_controller.perform_rollout(starting_state, starting_observation, 
-                                                                        starting_observation_NNinput, desired_x, 
-                                                                        follow_trajectories, horiz_penalty_factor, 
-                                                                        forward_encouragement_factor, heading_penalty_factor, 
+                resulting_x, selected_u, ep_rew, _ = mpc_controller.perform_rollout(starting_state, starting_observation,
+                                                                        starting_observation_NNinput, desired_x,
+                                                                        follow_trajectories, horiz_penalty_factor,
+                                                                        forward_encouragement_factor, heading_penalty_factor,
                                                                         noise_actions_during_MPC_rollouts, curr_noise_amount)
 
                 #save info from MPC rollout
@@ -673,18 +673,18 @@ def main():
                     u_array = np.squeeze(np.array(selected_multiple_u), axis=2)[0:(rollouts_forTraining+1)]
 
                 for i in range(rollouts_forTraining):
-                    
+
                     if(which_agent==6 or which_agent==1):
                         x= np.array(x_array[i])
                         u= np.squeeze(u_array[i], axis=1)
                     else:
                         x= x_array[i] #[N+1, NN_inp]
                         u= u_array[i] #[N, actionSize]
-                    
+
                     newDataX= np.copy(x[0:-1, :])
                     newDataY= np.copy(u)
                     newDataZ= np.copy(x[1:, :]-x[0:-1, :])
-                    
+
                     # make this new data a bit noisy before adding it into the dataset
                     if(make_aggregated_dataset_noisy):
                         newDataX = add_noise(newDataX, noiseToSignal)
@@ -699,13 +699,13 @@ def main():
                 ### aggregate the rest of the rollouts into validation set
                 ##############################
 
-                x_array = np.array(resulting_multiple_x)[rollouts_forTraining:len(resulting_multiple_x)] 
+                x_array = np.array(resulting_multiple_x)[rollouts_forTraining:len(resulting_multiple_x)]
                 # ^ dim: [rollouts_forValidation x stepsPerEpisode+1 x stateSize]
                 if(which_agent==6 or which_agent==1):
-                    u_array = np.array(selected_multiple_u)[rollouts_forTraining:len(resulting_multiple_x)] 
+                    u_array = np.array(selected_multiple_u)[rollouts_forTraining:len(resulting_multiple_x)]
                 else:
-                    u_array = np.squeeze(np.array(selected_multiple_u), axis=2)[rollouts_forTraining:len(resulting_multiple_x)] 
-                    # rollouts_forValidation x stepsPerEpisode x acSize 
+                    u_array = np.squeeze(np.array(selected_multiple_u), axis=2)[rollouts_forTraining:len(resulting_multiple_x)]
+                    # rollouts_forValidation x stepsPerEpisode x acSize
 
                 full_states_list = []
                 full_controls_list = []
@@ -741,7 +741,7 @@ def main():
             np.save(save_dir + '/errors_50_per_agg.npy', errors_50_per_agg)
             np.save(save_dir + '/errors_100_per_agg.npy', errors_100_per_agg)
             np.save(save_dir + '/avg_rollout_rewards_per_agg.npy', list_avg_rew)
-            np.save(save_dir + '/losses/list_training_loss.npy', training_loss_list) 
+            np.save(save_dir + '/losses/list_training_loss.npy', training_loss_list)
             np.save(save_dir + '/losses/list_old_loss.npy', old_loss_list)
             np.save(save_dir + '/losses/list_new_loss.npy', new_loss_list)
 
@@ -778,10 +778,10 @@ def main():
                 #perform 1 MPC rollout
                 startrollout = time.time()
                 curr_noise_amount=0
-                _, _, ep_rew, rollout_saved = mpc_controller.perform_rollout(starting_state, starting_observation, 
-                                                                    starting_observation_NNinput, desired_x, 
-                                                                    follow_trajectories, horiz_penalty_factor, 
-                                                                    forward_encouragement_factor, heading_penalty_factor, 
+                _, _, ep_rew, rollout_saved = mpc_controller.perform_rollout(starting_state, starting_observation,
+                                                                    starting_observation_NNinput, desired_x,
+                                                                    follow_trajectories, horiz_penalty_factor,
+                                                                    forward_encouragement_factor, heading_penalty_factor,
                                                                     noise_actions_during_MPC_rollouts, curr_noise_amount)
 
                 if(not(print_minimal)):
@@ -817,7 +817,7 @@ def main():
             f = open(save_dir + '/savedRollouts_startingStates.save', 'wb')
             cPickle.dump(starting_states, f, protocol=cPickle.HIGHEST_PROTOCOL)
             f.close()
-   
+
             print("Saved MPC rollouts for later mbmf TRPO usage.")
 
         np.save(save_dir + '/datapoints_MB.npy', list_num_datapoints)
