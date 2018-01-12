@@ -134,21 +134,18 @@ def run_task(v):
                     rewards_list.append(reward_for_rollout)
                     returns_list.append(returns)
 
-            import ipdb
-            ipdb.set_trace()
+            #Figure out how to build the backwards model.
+            #Conjecture_1
+            #------- Take quantile sample of trajectories which recieves highest cumulative rewards!
 
             number_of_trajectories = int(np.floor(v['top_k'] * len(rewards_list)/100))
             rewards_list_np = np.asarray(rewards_list)
             trajectory_indices = rewards_list_np.argsort()[-number_of_trajectories:][::-1]
-
             selected_observations_list = []
             for index_ in range(len(trajectory_indices)):
                 selected_observations_list.append(observations_list[trajectory_indices[index_]])
 
 
-            #Figure out how to build the backwards model.
-            #Conjecture_1
-            #------- Take quantile sample of trajectories which recieves highest cumulative rewards!
 
             #Figure out from where to start the backwards model.
             #Conjecture_1
@@ -198,6 +195,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
 parser.add_argument('--outer_iters', type=int, default=500)
 parser.add_argument('--fw_iter', type=int, default=1)
+parser.add_argument('--top_k', type=int, default=10)
 parser.add_argument('--num_imagination_steps', type=int, default=20)
 parser.add_argument('--fw_learning_rate', type=float, default='0.0005')
 parser.add_argument('--bw_learning_rate', type=float, default='0.0001')
@@ -234,13 +232,14 @@ tf.set_random_seed(args.seed)
 
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_quantile_samples_' + str(args.top_k),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
                     fw_learning_rate = args.fw_learning_rate,
                     outer_iters = args.outer_iters,
                     fw_iter = args.fw_iter,
+                    top_k = args.top_k,
                     num_imagination_steps = args.num_imagination_steps,
                     bw_learning_rate = args.bw_learning_rate,
                     print_minimal = args.print_minimal,
