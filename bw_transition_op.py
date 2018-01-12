@@ -16,7 +16,7 @@ import theano.tensor as TT
 class Bw_Trans_Model:
 
     def __init__(self, inputSize, outputSize, env, v, learning_rate, batchsize, which_agent, x_index, y_index,
-                num_fc_layers, depth_fc_layers, mean_x, mean_y, mean_z, std_x, std_y, std_z, tf_datatype, print_minimal):
+                num_fc_layers, depth_fc_layers, print_minimal):
 
         #init vars
         #self.sess = sess
@@ -26,12 +26,6 @@ class Bw_Trans_Model:
         self.y_index = y_index
         self.inputSize = inputSize
         self.outputSize = outputSize
-        self.mean_x = mean_x
-        self.mean_y = mean_y
-        self.mean_z = mean_z
-        self.std_x = std_x
-        self.std_y = std_y
-        self.std_z = std_z
         self.print_minimal = print_minimal
 
         LOW = -1000000
@@ -67,7 +61,7 @@ class Bw_Trans_Model:
         self.act_out = TT.matrix('act_out')
         self.diff_out = TT.matrix('diff_out')
 
-        bw_learning_rate = 0.005
+        bw_learning_rate = v['bw_learning_rate']
         self.bw_act_dist = self.bw_act_pol.dist_info_sym(self.obs_in)
         self.bw_obs_dist = self.bw_obs_pol.dist_info_sym(self.obsact_in)
         self.bw_act_loss = -TT.sum(self.bw_act_pol.distribution.log_likelihood_sym(self.act_out, self.bw_act_dist))
@@ -154,7 +148,7 @@ class Bw_Trans_Model:
 
 
     #multistep prediction using the learned dynamics model at each step
-    def do_forward_sim(self, forwardsim_x_true, num_step, many_in_parallel, env_inp, which_agent):
+    def do_forward_sim(self, forwardsim_x_true, num_step, many_in_parallel, env_inp, which_agent, mean_x, mean_y, mean_z, std_x, std_y, std_z):
 
         #init vars
         state_list = []
@@ -165,12 +159,12 @@ class Bw_Trans_Model:
         else:
             curr_state = np.copy(forwardsim_x_true) #curr state is of dim NN input
             for i in range(num_step):
-                curr_state_preprocessed = curr_state - self.mean_x
-                curr_state_preprocessed = np.nan_to_num(curr_state_preprocessed/self.std_x)
+                curr_state_preprocessed = curr_state - mean_x
+                curr_state_preprocessed = np.nan_to_num(curr_state_preprocessed/std_x)
                 action = self.bw_act_pol.get_action(curr_state_preprocessed)[0]
-                action_ = action * self.std_y + self.mean_y
+                action_ = action * std_y + mean_y
                 state_difference = self.bw_obs_pol.get_action(np.concatenate((curr_state_preprocessed, action)))[0]
-                state_differences= (state_difference*self.std_z)+self.mean_z
+                state_differences= (state_difference*std_z)+mean_z
                 next_state = curr_state + state_differences
                 #copy the state info
                 curr_state= np.copy(next_state)

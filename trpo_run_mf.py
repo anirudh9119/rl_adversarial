@@ -1,9 +1,9 @@
-import numpy as np 
+import numpy as np
 import matplotlib.pyplot as plt
 import math
 npr = np.random
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
-import tensorflow as tf 
+import tensorflow as tf
 from six.moves import cPickle
 from collect_samples import CollectSamples
 from get_true_action import GetTrueAction
@@ -79,9 +79,9 @@ if(args.which_agent==6):
 npr.seed(args.seed)
 tf.set_random_seed(args.seed)
 
-run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True, 
-					n_parallel=str(args.num_workers_trpo), 
+run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
+					n_parallel=str(args.num_workers_trpo),
 					exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num),
-					variant=dict(batch_size=batch_size, which_agent=args.which_agent, 
+					variant=dict(batch_size=batch_size, which_agent=args.which_agent,
 								steps_per_rollout=steps_per_rollout, num_trpo_iters=num_trpo_iters,
 								FiniteDifferenceHvp=FiniteDifferenceHvp, ConjugateGradientOptimizer=ConjugateGradientOptimizer))
