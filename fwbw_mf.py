@@ -42,7 +42,6 @@ def zero_mean_unit_std(dataX):
 def run_task(v):
         env, _ = create_env(v["which_agent"])
         fw_learning_rate = v['fw_learning_rate'] # 0.0005!
-        #bw_learning_rate = v['bw_learning_rate'] # 0.0001!
 
         yaml_path = os.path.abspath('yaml_files/'+v['yaml_file']+'.yaml')
         assert(os.path.exists(yaml_path))
@@ -54,7 +53,7 @@ def run_task(v):
         lr = params['dyn_model']['lr']
         print_minimal= v['print_minimal']
         nEpoch = params['dyn_model']['nEpoch']
-        save_dir = 'run_temp'
+        save_dir = v['exp_name']
         inputSize = env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
         outputSize = env.spec.observation_space.flat_dim
 
@@ -135,9 +134,30 @@ def run_task(v):
                     rewards_list.append(reward_for_rollout)
                     returns_list.append(returns)
 
+            import ipdb
+            ipdb.set_trace()
+
+            number_of_trajectories = int(np.floor(v['top_k'] * len(rewards_list)/100))
+            rewards_list_np = np.asarray(rewards_list)
+            trajectory_indices = rewards_list_np.argsort()[-number_of_trajectories:][::-1]
+
+            selected_observations_list = []
+            for index_ in range(len(trajectory_indices)):
+                selected_observations_list.append(observations_list[trajectory_indices[index_]])
+
+
+            #Figure out how to build the backwards model.
+            #Conjecture_1
+            #------- Take quantile sample of trajectories which recieves highest cumulative rewards!
+
+            #Figure out from where to start the backwards model.
+            #Conjecture_1
+            #------ Take quantile sample of high value states, and start the backwards model from them!
+            #which amounts to just taking a non parametric buffer of high values states, which should be
+            #fine!
 
             #Not all parts of the state are actually used.
-            states = from_observation_to_usablestate(observations_list, v["which_agent"], False)
+            states = from_observation_to_usablestate(selected_observations_list, v["which_agent"], False)
             controls = actions_list
             dataX , dataY = generate_training_data_inputs(states, controls)
             states = np.asarray(states)
@@ -214,7 +234,7 @@ tf.set_random_seed(args.seed)
 
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,

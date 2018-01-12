@@ -1,14 +1,10 @@
-
 import numpy as np
 import numpy.random as npr
-#import tensorflow as tf
 import time
 import math
 import theano
 import lasagne
-#from feedforward_network import feedforward_network
 from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
-
 from rllab.envs.env_spec import EnvSpec
 from rllab.spaces import Box
 import theano.tensor as TT
