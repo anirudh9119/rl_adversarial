@@ -29,7 +29,8 @@ from bw_transition_op import Bw_Trans_Model
 import theano.tensor as TT
 import lasagne
 import theano
-import numpy
+#import numpy
+from logger import Logger as hist_logging
 
 def zero_mean_unit_std(dataX):
     mean_x = np.mean(dataX, axis = 0)
@@ -71,6 +72,7 @@ def run_task(v):
         fw_update = lasagne.updates.adam(fw_loss, fw_params, learning_rate=fw_learning_rate)
         fw_func = theano.function([fwd_obs, fwd_act_out], fw_loss,
                                    updates=fw_update, allow_input_downcast=True)
+        hist_logger = hist_logging('./logs')
 
         optimizer_params = dict(base_eps=1e-5)
         if not os.path.exists(save_dir):
@@ -103,11 +105,10 @@ def run_task(v):
                     step_size=0.05,
                     plot_true=True
                     )
-
+            all_paths = algo.train()
 
             #Collect the trajectories, using these trajectories which leads to high value states
             # learn a backwards model!
-            all_paths = algo.train()
             observations_list = []
             actions_list = []
             rewards_list = []
@@ -134,18 +135,21 @@ def run_task(v):
                     rewards_list.append(reward_for_rollout)
                     returns_list.append(returns)
 
+            hist_logger.log_scalar(save_dir, np.sum(rewards_list)/len(rewards_list), outer_iter * v["num_trpo_iters"] )
+
+
             #Figure out how to build the backwards model.
             #Conjecture_1
             #------- Take quantile sample of trajectories which recieves highest cumulative rewards!
 
-            number_of_trajectories = int(np.floor(v['top_k'] * len(rewards_list)/100))
+            number_of_trajectories = int(np.floor(v['top_k_trajectories'] * len(rewards_list)/100))
             rewards_list_np = np.asarray(rewards_list)
             trajectory_indices = rewards_list_np.argsort()[-number_of_trajectories:][::-1]
             selected_observations_list = []
+            selected_actions_list = []
             for index_ in range(len(trajectory_indices)):
                 selected_observations_list.append(observations_list[trajectory_indices[index_]])
-
-
+                selected_actions_list.append(actions_list[trajectory_indices[index_]])
 
             #Figure out from where to start the backwards model.
             #Conjecture_1
@@ -153,9 +157,19 @@ def run_task(v):
             #which amounts to just taking a non parametric buffer of high values states, which should be
             #fine!
 
+            flatten_ret_list = np.asarray(returns_list).flatten()
+            flatten_obs_list = np.vstack(np.asarray(observations_list))
+            number_of_bw_samples = int(np.floor(v['top_k_bw_samples'] * len(flatten_ret_list)/100))
+            samples_indices = flatten_ret_list.argsort()[-number_of_bw_samples:][::-1]
+            bw_samples = []
+            for bw_index in range(len(samples_indices)):
+                bw_samples.append(flatten_obs_list[samples_indices[bw_index]])
+
+
+
             #Not all parts of the state are actually used.
             states = from_observation_to_usablestate(selected_observations_list, v["which_agent"], False)
-            controls = actions_list
+            controls = selected_actions_list
             dataX , dataY = generate_training_data_inputs(states, controls)
             states = np.asarray(states)
             dataZ = generate_training_data_outputs(states, v['which_agent'])
@@ -173,17 +187,17 @@ def run_task(v):
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
             print("Training Loss for Backwards model", training_loss)
 
-            for goal_ind in range(v['fw_iter']):
+            for goal_ind in range(len(bw_samples)):
                 #train the backwards model
                 #Give inital state, perform rollouts from backwards model.Right now, state is random, but it should
                 #be selected from some particular list
-                forwardsim_x_true=numpy.random.rand(20)
+                forwardsim_x_true=bw_samples[goal_ind]
                 state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
                                                                    mean_x, mean_y, mean_z, std_x, std_y, std_z)
 
                 #Incorporate the backwards trace into model based system.
-                loss = fw_func(np.vstack(state_list), np.vstack(action_list))
-                print("Immitation Learning loss", loss)
+                fw_func(np.vstack(state_list), np.vstack(action_list))
+                #print("Immitation Learning loss", loss)
 
 
 
@@ -195,7 +209,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
 parser.add_argument('--outer_iters', type=int, default=500)
 parser.add_argument('--fw_iter', type=int, default=1)
-parser.add_argument('--top_k', type=int, default=10)
+parser.add_argument('--top_k_trajectories', type=int, default=10)
+parser.add_argument('--top_k_bw_samples', type=int, default=1)
 parser.add_argument('--num_imagination_steps', type=int, default=20)
 parser.add_argument('--fw_learning_rate', type=float, default='0.0005')
 parser.add_argument('--bw_learning_rate', type=float, default='0.0001')
@@ -221,7 +236,8 @@ if(args.which_agent==4):
 if(args.which_agent==6):
 	num_trpo_iters= 2000
 
-num_trpo_iters= 1
+num_trpo_iters = 5
+
 
 ##########################################
 ##########################################
@@ -232,14 +248,15 @@ tf.set_random_seed(args.seed)
 
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_quantile_samples_' + str(args.top_k),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str('num_trpo_iters') + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
                     fw_learning_rate = args.fw_learning_rate,
                     outer_iters = args.outer_iters,
                     fw_iter = args.fw_iter,
-                    top_k = args.top_k,
+                    top_k_trajectories = args.top_k_trajectories,
+                    top_k_bw_samples = args.top_k_bw_samples,
                     num_imagination_steps = args.num_imagination_steps,
                     bw_learning_rate = args.bw_learning_rate,
                     print_minimal = args.print_minimal,
