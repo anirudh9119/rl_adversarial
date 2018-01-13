@@ -193,9 +193,9 @@ def run_task(v):
             elif v['num_imagination_steps'] == 50:
                 nEpoch = 20
             elif v['num_imagination_steps'] == 100:
-                nEpoch = 50
+                nEpoch = 30
             else:
-                nEpoch = 20
+                nEpoch = 15
 
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
             print("Training Loss for Backwards model", training_loss)
