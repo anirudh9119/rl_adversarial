@@ -59,7 +59,11 @@ def run_task(v):
         outputSize = env.spec.observation_space.flat_dim
 
         #Initialize the forward policy
-        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64))
+        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64),
+                 learn_std=False, #v['learn_std'],
+                 adaptive_std=False, #v['adaptive_std'],
+                 output_gain=1, #v['output_gain'],
+                 init_std=1) #v['polic)
         baseline = LinearFeatureBaseline(env_spec=env.spec)
 
 
@@ -183,6 +187,15 @@ def run_task(v):
             inputs = np.concatenate((dataX, dataY), axis=1)
             outputs = np.copy(dataZ)
             assert inputs.shape[0] == outputs.shape[0]
+
+            if v['num_imagination_steps'] == 10:
+                nEpoch = 10
+            elif v['num_imagination_steps'] == 50:
+                nEpoch = 20
+            elif v['num_imagination_steps'] == 100:
+                nEpoch = 50
+            else:
+                nEpoch = 20
 
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
             print("Training Loss for Backwards model", training_loss)
