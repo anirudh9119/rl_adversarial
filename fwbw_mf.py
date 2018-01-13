@@ -187,17 +187,20 @@ def run_task(v):
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
             print("Training Loss for Backwards model", training_loss)
 
-            for goal_ind in range(len(bw_samples)):
-                #train the backwards model
-                #Give inital state, perform rollouts from backwards model.Right now, state is random, but it should
-                #be selected from some particular list
-                forwardsim_x_true=bw_samples[goal_ind]
-                state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
-                                                                   mean_x, mean_y, mean_z, std_x, std_y, std_z)
+            if v['running_baseline'] == False:
+                for goal_ind in range(len(bw_samples)):
+                    #train the backwards model
+                    #Give inital state, perform rollouts from backwards model.Right now, state is random, but it should
+                    #be selected from some particular list
+                    forwardsim_x_true=bw_samples[goal_ind]
+                    state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
+                                                                       mean_x, mean_y, mean_z, std_x, std_y, std_z)
 
-                #Incorporate the backwards trace into model based system.
-                fw_func(np.vstack(state_list), np.vstack(action_list))
-                #print("Immitation Learning loss", loss)
+                    #Incorporate the backwards trace into model based system.
+                    fw_func(np.vstack(state_list), np.vstack(action_list))
+                    #print("Immitation Learning loss", loss)
+            else:
+                print('running TRPO baseline')
 
 
 
@@ -207,6 +210,7 @@ def run_task(v):
 #ARGUMENTS TO SPECIFY
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
+parser.add_argument('--running_baseline', type=bool, default=False)
 parser.add_argument('--outer_iters', type=int, default=500)
 parser.add_argument('--fw_iter', type=int, default=1)
 parser.add_argument('--top_k_trajectories', type=int, default=10)
@@ -248,7 +252,7 @@ tf.set_random_seed(args.seed)
 
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str('num_trpo_iters') + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str('num_trpo_iters') + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str('args.running_baseline'),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
@@ -262,5 +266,6 @@ run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=Tr
                     print_minimal = args.print_minimal,
                     steps_per_rollout=steps_per_rollout,
                     num_trpo_iters=num_trpo_iters,
+                    running_baseline = args.running_baseline,
                     FiniteDifferenceHvp=FiniteDifferenceHvp,
                     ConjugateGradientOptimizer=ConjugateGradientOptimizer))
