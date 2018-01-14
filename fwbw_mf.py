@@ -223,6 +223,7 @@ def run_task(v):
 #ARGUMENTS TO SPECIFY
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
+parser.add_argument('--bw_variance_learn', type=bool, default=False)
 parser.add_argument('--running_baseline', type=bool, default=False)
 parser.add_argument('--outer_iters', type=int, default=500)
 parser.add_argument('--fw_iter', type=int, default=1)
@@ -254,7 +255,7 @@ if(args.which_agent==6):
 	num_trpo_iters= 2000
 
 num_trpo_iters = 5
-
+bw_variance_learn = False
 
 ##########################################
 ##########################################
@@ -262,10 +263,9 @@ num_trpo_iters = 5
 # set tf seed
 npr.seed(args.seed)
 tf.set_random_seed(args.seed)
-
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str('num_trpo_iters') + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str(args.running_baseline),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str('num_trpo_iters') + 'fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str(args.running_baseline) + '_bw_variance_'+ str(bw_variance_learn),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
@@ -281,4 +281,5 @@ run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=Tr
                     num_trpo_iters=num_trpo_iters,
                     running_baseline = args.running_baseline,
                     FiniteDifferenceHvp=FiniteDifferenceHvp,
+                    bw_variance_learn = bw_variance_learn,
                     ConjugateGradientOptimizer=ConjugateGradientOptimizer))

@@ -36,21 +36,13 @@ class Bw_Trans_Model:
         self.bw_act_pol = GaussianMLPPolicy(
          env_spec=obs_to_act_spec,
          hidden_sizes=(64, 64),
-         learn_std=False, #v['learn_std'],
-         adaptive_std=False, #v['adaptive_std'],
-         std_hidden_sizes=(16, 16),
-         output_gain=1, #v['output_gain'],
-         init_std=1, #v['policy_init_std'],
+         learn_std=v['bw_variance_learn'],
          )
 
         self.bw_obs_pol = GaussianMLPPolicy(
          env_spec=obsact_to_obs_spec,
          hidden_sizes=(64, 64),
-         learn_std=False, #['learn_std'],
-         adaptive_std=False, #v['adaptive_std'],
-         #std_hidden_sizes=(16, 16),
-         output_gain=1, #Falsev['output_gain'],
-         init_std=1, #Falsev['policy_init_std'],
+         learn_std=v['bw_variance_learn'], #['learn_std'],
          )
 
         self.obs_in = TT.matrix('obs_in')
