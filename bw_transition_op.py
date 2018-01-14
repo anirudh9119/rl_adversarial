@@ -32,6 +32,7 @@ class Bw_Trans_Model:
         obsact_to_obs_spec = EnvSpec(observation_space=Box(LOW, HIGH, shape=(self.obs_dim + self.act_dim,)),
                                             action_space=Box(LOW, HIGH, shape=(self.obs_dim,)))
 
+        #TODO: Think, whether to learn std for backwards policy or not.
         self.bw_act_pol = GaussianMLPPolicy(
          env_spec=obs_to_act_spec,
          hidden_sizes=(64, 64),
