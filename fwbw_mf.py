@@ -189,13 +189,15 @@ def run_task(v):
             assert inputs.shape[0] == outputs.shape[0]
 
             if v['num_imagination_steps'] == 10:
-                nEpoch = 10
+                nEpoch = 20
             elif v['num_imagination_steps'] == 50:
                 nEpoch = 20
             elif v['num_imagination_steps'] == 100:
                 nEpoch = 30
             else:
-                nEpoch = 10
+                nEpoch = 20
+
+            nEpoch = v['nEpoch']
 
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
             print("Training Loss for Backwards model", training_loss)
@@ -223,6 +225,7 @@ def run_task(v):
 #ARGUMENTS TO SPECIFY
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
+parser.add_argument('--nEpoch', type=int, default='20')
 parser.add_argument('--bw_model_hidden_size', type=int, default='64')
 parser.add_argument('--policy_variance', type=int, default='0')
 parser.add_argument('--num_trpo_iters', type=int, default='5')
@@ -270,7 +273,7 @@ npr.seed(args.seed)
 tf.set_random_seed(args.seed)
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str(args.num_trpo_iters) + '_fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str(args.running_baseline) + '_bw_variance_'+ str(bw_variance_learn) + '_bw_hidden_size_' + str(args.bw_model_hidden_size),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str(args.num_trpo_iters) + '_fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str(args.running_baseline) + '_bw_variance_'+ str(bw_variance_learn) + '_bw_hidden_size_' + str(args.bw_model_hidden_size) + '_Epoch_' + str(args.nEpoch),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
@@ -288,4 +291,5 @@ run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=Tr
                     running_baseline = args.running_baseline,
                     FiniteDifferenceHvp=FiniteDifferenceHvp,
                     bw_variance_learn = bw_variance_learn,
+                    nEpoch = args.nEpoch,
                     ConjugateGradientOptimizer=ConjugateGradientOptimizer))
