@@ -140,6 +140,10 @@ def run_task(v):
                     returns_list.append(returns)
 
             hist_logger.log_scalar(save_dir, np.sum(rewards_list)/len(rewards_list), outer_iter * v["num_trpo_iters"] )
+            selected_observations_list = []
+            selected_observations_list_for_state_seletection = []
+            selected_actions_list = []
+            selected_returns_list = []
 
 
             #Figure out how to build the backwards model.
@@ -149,17 +153,27 @@ def run_task(v):
             number_of_trajectories = int(np.floor(v['top_k_trajectories'] * len(rewards_list)/100))
             rewards_list_np = np.asarray(rewards_list)
             trajectory_indices = rewards_list_np.argsort()[-number_of_trajectories:][::-1]
-            selected_observations_list = []
-            selected_actions_list = []
             for index_ in range(len(trajectory_indices)):
                 selected_observations_list.append(observations_list[trajectory_indices[index_]])
                 selected_actions_list.append(actions_list[trajectory_indices[index_]])
+
+            selected_observations_list_for_state_selection = []
+            number_of_trajectories = int(np.floor(v['top_k_trajectories_state_selection'] * len(rewards_list)/100))
+            rewards_list_np = np.asarray(rewards_list)
+            trajectory_indices = rewards_list_np.argsort()[-number_of_trajectories:][::-1]
+            for index_ in range(len(trajectory_indices)):
+                selected_observations_list_for_state_seletection.append(observations_list[trajectory_indices[index_]])
+                selected_returns_list.append(returns_list[trajectory_indices[index_]])
 
             #Figure out from where to start the backwards model.
             #Conjecture_1
             #------ Take quantile sample of high value states, and start the backwards model from them!
             #which amounts to just taking a non parametric buffer of high values states, which should be
             #fine!
+
+            if v['use_good_trajectories'] == 1:
+                returns_list = selected_returns_list
+                observations_list = selected_observations_list_for_state_selection
 
             flatten_ret_list = np.asarray(returns_list).flatten()
             flatten_obs_list = np.vstack(np.asarray(observations_list))
@@ -226,11 +240,13 @@ def run_task(v):
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default='0')
 parser.add_argument('--nEpoch', type=int, default='20')
+parser.add_argument('--use_good_trajectories', type=int, default='1')
+parser.add_argument('--top_k_trajectories_state_selection', type=int, default='10')
 parser.add_argument('--bw_model_hidden_size', type=int, default='64')
 parser.add_argument('--policy_variance', type=int, default='0')
 parser.add_argument('--num_trpo_iters', type=int, default='5')
 parser.add_argument('--running_baseline', type=bool, default=False)
-parser.add_argument('--outer_iters', type=int, default=500)
+parser.add_argument('--outer_iters', type=int, default=2500)
 parser.add_argument('--fw_iter', type=int, default=1)
 parser.add_argument('--top_k_trajectories', type=int, default=10)
 parser.add_argument('--top_k_bw_samples', type=int, default=1)
@@ -273,7 +289,8 @@ npr.seed(args.seed)
 tf.set_random_seed(args.seed)
 run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=True,
                     n_parallel=str(args.num_workers_trpo),
-                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str(args.num_trpo_iters) + '_fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' + str(args.running_baseline) + '_bw_variance_'+ str(bw_variance_learn) + '_bw_hidden_size_' + str(args.bw_model_hidden_size) + '_Epoch_' + str(args.nEpoch),
+                    exp_name='agent_'+ str(args.which_agent)+'_seed_'+str(args.seed)+'_mf'+ '_run'+ str(args.save_trpo_run_num) + '_trpo_inner_iters_'+ str(args.num_trpo_iters) + '_fw_lr_' + str(args.fw_learning_rate) + '_bw_lr_' + str(args.bw_learning_rate) + '_num_immi_updates_' + str(args.fw_iter) + '_bw_rolls_' + str(args.num_imagination_steps) + '_top_k_trajectories_' + str(args.top_k_trajectories) + '_top_k_bw_samples_' + str(args.top_k_bw_samples) + '_running_baseline_' +
+                    str(args.running_baseline) + '_bw_variance_'+ str(bw_variance_learn) + '_bw_hidden_size_' + str(args.bw_model_hidden_size) + '_Epoch_' + str(args.nEpoch) + '_use_good_trajectories_' + str(args.use_good_trajectories),
                     variant=dict(batch_size=batch_size,
                     which_agent=args.which_agent,
                     yaml_file = args.yaml_file,
@@ -292,4 +309,6 @@ run_experiment_lite(run_task, plot=True, snapshot_mode="all", use_cloudpickle=Tr
                     FiniteDifferenceHvp=FiniteDifferenceHvp,
                     bw_variance_learn = bw_variance_learn,
                     nEpoch = args.nEpoch,
+                    use_good_trajectories = args.use_good_trajectories,
+                    top_k_trajectories_state_selection = args.top_k_trajectories_state_selection,
                     ConjugateGradientOptimizer=ConjugateGradientOptimizer))
