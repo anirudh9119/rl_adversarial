@@ -8,6 +8,7 @@ from rllab.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from rllab.envs.env_spec import EnvSpec
 from rllab.spaces import Box
 import theano.tensor as TT
+import lasagne.nonlinearities as NL
 
 class Bw_Trans_Model:
 
@@ -43,6 +44,7 @@ class Bw_Trans_Model:
          env_spec=obsact_to_obs_spec,
          hidden_sizes=(v['bw_model_hidden_size'], v['bw_model_hidden_size']),
          learn_std=v['bw_variance_learn'],
+         hidden_nonlinearity=NL.rectify,
          )
 
         self.obs_in = TT.matrix('obs_in')
