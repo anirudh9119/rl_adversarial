@@ -54,7 +54,7 @@ def run_task(v):
         lr = params['dyn_model']['lr']
         print_minimal= v['print_minimal']
         nEpoch = params['dyn_model']['nEpoch']
-        save_dir = v['exp_name']
+        save_dir = '/data/milatmp1/goyalani/fwbw_icml_2018/' + v['exp_name']
         inputSize = env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
         outputSize = env.spec.observation_space.flat_dim
 
@@ -76,7 +76,7 @@ def run_task(v):
         fw_update = lasagne.updates.adam(fw_loss, fw_params, learning_rate=fw_learning_rate)
         fw_func = theano.function([fwd_obs, fwd_act_out], fw_loss,
                                    updates=fw_update, allow_input_downcast=True)
-        hist_logger = hist_logging('./logs')
+        hist_logger = hist_logging(v['yaml_file'])
 
         optimizer_params = dict(base_eps=1e-5)
         if not os.path.exists(save_dir):
