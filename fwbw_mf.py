@@ -54,7 +54,7 @@ def run_task(v):
         lr = params['dyn_model']['lr']
         print_minimal= v['print_minimal']
         nEpoch = params['dyn_model']['nEpoch']
-        save_dir = '/data/milatmp1/goyalani/fwbw_icml_2018/' + v['exp_name']
+        save_dir = 'logs/' + v['exp_name']
         inputSize = env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
         outputSize = env.spec.observation_space.flat_dim
 
@@ -225,8 +225,9 @@ def run_task(v):
                     state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
                                                                        mean_x, mean_y, mean_z, std_x, std_y, std_z)
 
-                    #Incorporate the backwards trace into model based system.
-                    fw_func(np.vstack(state_list), np.vstack(action_list))
+                    if outer_iter * v["num_trpo_iters"] <= 60:
+                        #Incorporate the backwards trace into model based system.
+                        fw_func(np.vstack(state_list), np.vstack(action_list))
                     #print("Immitation Learning loss", loss)
             else:
                 print('running TRPO baseline')
