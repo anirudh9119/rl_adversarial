@@ -32,6 +32,35 @@ import theano
 #import numpy
 from logger import Logger as hist_logging
 
+
+#ARGUMENTS TO SPECIFY
+parser = argparse.ArgumentParser()
+parser.add_argument('--seed', type=int, default='0')
+parser.add_argument('--nEpoch', type=int, default='20')
+parser.add_argument('--use_good_trajectories', type=int, default='1')
+parser.add_argument('--top_k_trajectories_state_selection', type=int, default='10')
+parser.add_argument('--bw_model_hidden_size', type=int, default='64')
+parser.add_argument('--policy_variance', type=int, default='0')
+parser.add_argument('--num_trpo_iters', type=int, default='5')
+parser.add_argument('--running_baseline', type=bool, default=False)
+parser.add_argument('--outer_iters', type=int, default=2500)
+parser.add_argument('--fw_iter', type=int, default=1)
+parser.add_argument('--top_k_trajectories', type=int, default=10)
+parser.add_argument('--top_k_bw_samples', type=int, default=1)
+parser.add_argument('--num_imagination_steps', type=int, default=20)
+parser.add_argument('--fw_learning_rate', type=float, default='0.0005')
+parser.add_argument('--bw_learning_rate', type=float, default='0.0001')
+parser.add_argument('--steps_per_rollout', type=int, default='1000')
+parser.add_argument('--save_trpo_run_num', type=int, default='1')
+parser.add_argument('--which_agent', type=int, default= 2)
+parser.add_argument('--num_workers_trpo', type=int, default=2)
+parser.add_argument('--yaml_file', type=str, default='ant_forward')
+parser.add_argument('--save_dir', type=str,
+        default='/data/milatmp1/goyalani/fwbw_icml_2018/')
+parser.add_argument('--print_minimal', action="store_true", dest='print_minimal', default=False)
+args = parser.parse_args()
+
+
 def zero_mean_unit_std(dataX):
     mean_x = np.mean(dataX, axis = 0)
     dataX = dataX - mean_x
@@ -54,7 +83,7 @@ def run_task(v):
         lr = params['dyn_model']['lr']
         print_minimal= v['print_minimal']
         nEpoch = params['dyn_model']['nEpoch']
-        save_dir = '/data/milatmp1/goyalani/fwbw_icml_2018/' + v['exp_name']
+        save_dir = os.path.join(args.save_dir, v['exp_name'])
         inputSize = env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
         outputSize = env.spec.observation_space.flat_dim
 
@@ -66,7 +95,6 @@ def run_task(v):
                  #init_std=1) #v['polic)
         baseline = LinearFeatureBaseline(env_spec=env.spec)
 
-
         #Update function for the forward policy (immitation learning loss!)
         fwd_obs = TT.matrix('fwd_obs')
         fwd_act_out = TT.matrix('act_out')
@@ -76,7 +104,9 @@ def run_task(v):
         fw_update = lasagne.updates.adam(fw_loss, fw_params, learning_rate=fw_learning_rate)
         fw_func = theano.function([fwd_obs, fwd_act_out], fw_loss,
                                    updates=fw_update, allow_input_downcast=True)
-        hist_logger = hist_logging(v['yaml_file'])
+        log_dir = v['yaml_file']
+        print('Logging Tensorboard to: %s' % log_dir)
+        hist_logger = hist_logging(log_dir)
 
         optimizer_params = dict(base_eps=1e-5)
         if not os.path.exists(save_dir):
@@ -235,31 +265,6 @@ def run_task(v):
 
 ##########################################
 ##########################################
-
-#ARGUMENTS TO SPECIFY
-parser = argparse.ArgumentParser()
-parser.add_argument('--seed', type=int, default='0')
-parser.add_argument('--nEpoch', type=int, default='20')
-parser.add_argument('--use_good_trajectories', type=int, default='1')
-parser.add_argument('--top_k_trajectories_state_selection', type=int, default='10')
-parser.add_argument('--bw_model_hidden_size', type=int, default='64')
-parser.add_argument('--policy_variance', type=int, default='0')
-parser.add_argument('--num_trpo_iters', type=int, default='5')
-parser.add_argument('--running_baseline', type=bool, default=False)
-parser.add_argument('--outer_iters', type=int, default=2500)
-parser.add_argument('--fw_iter', type=int, default=1)
-parser.add_argument('--top_k_trajectories', type=int, default=10)
-parser.add_argument('--top_k_bw_samples', type=int, default=1)
-parser.add_argument('--num_imagination_steps', type=int, default=20)
-parser.add_argument('--fw_learning_rate', type=float, default='0.0005')
-parser.add_argument('--bw_learning_rate', type=float, default='0.0001')
-parser.add_argument('--steps_per_rollout', type=int, default='1000')
-parser.add_argument('--save_trpo_run_num', type=int, default='1')
-parser.add_argument('--which_agent', type=int, default= 2)
-parser.add_argument('--num_workers_trpo', type=int, default=2)
-parser.add_argument('--yaml_file', type=str, default='ant_forward')
-parser.add_argument('--print_minimal', action="store_true", dest='print_minimal', default=False)
-args = parser.parse_args()
 
 batch_size = 50000
 
