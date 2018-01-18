@@ -29,7 +29,7 @@ class Bw_Trans_Model:
         self.act_dim = env.spec.action_space.flat_dim
         self.obs_dim = env.spec.observation_space.flat_dim
         obs_to_act_spec = env.spec
-        obsact_to_obs_spec = EnvSpec(observation_space=Box(LOW, HIGH, shape=(self.obs_dim + self.act_dim,)),
+        obsact_to_obs_spec = EnvSpec(observation_space=Box(LOW, HIGH, shape=(self.act_dim + self.obs_dim,)),
                                             action_space=Box(LOW, HIGH, shape=(self.obs_dim,)))
 
         #TODO: Think, whether to learn std for backwards policy or not.
@@ -77,6 +77,7 @@ class Bw_Trans_Model:
         training_loss_list = []
         nData_old = dataX.shape[0]
         num_new_pts = dataX_new.shape[0]
+        obs_shape = dataZ.shape[1]
 
         #how much of new data to use per batch
         if(num_new_pts<(self.batchsize*fraction_use_new)):
@@ -105,9 +106,8 @@ class Bw_Trans_Model:
                     dataX_batch = dataX_new[batch*batchsize_new_pts:(batch+1)*batchsize_new_pts, :]
                     dataZ_batch = dataZ_new[batch*batchsize_new_pts:(batch+1)*batchsize_new_pts, :]
 
-                    data_x = dataX_batch[:,0:self.obs_dim]
-                    data_y = dataX_batch[:, self.obs_dim:]
-
+                    data_x = dataX_batch[:,0:obs_shape]
+                    data_y = dataX_batch[:, obs_shape:]
                     loss = self.bw_act_train(data_x, data_y)
                     bw_obs_losses = self.bw_obs_train(dataX_batch, dataZ_batch)
 

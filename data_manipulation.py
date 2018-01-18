@@ -1,18 +1,18 @@
 import numpy as np
-import numpy.random as npr
-import tensorflow as tf
-import time
-import math
-import matplotlib.pyplot as plt
-import copy
+#import numpy.random as npr
+#import tensorflow as tf
+#import time
+#import math
+#import matplotlib.pyplot as plt
+#import copy
 
 def get_indices(which_agent):
     x_index = -7
     y_index = -7
-    z_index = -7 
+    z_index = -7
     yaw_index = -7
-    joint1_index = -7 
-    joint2_index = -7 
+    joint1_index = -7
+    joint2_index = -7
     frontleg_index = -7
     frontshin_index = -7
     frontfoot_index = -7
@@ -70,13 +70,15 @@ def generate_training_data_inputs(states0, controls0):
     # remove the last entry in each rollout (because that entry doesn't have an associated "output")
     for i in range(len(states)):
         curr_item = states[i]
+        curr_item = np.asarray(curr_item)
         length = curr_item.shape[0]
         new_states.append(curr_item[0:length-1,:])
 
         curr_item = controls[i]
+        curr_item = np.asarray(curr_item)
         length = curr_item.shape[0]
         new_controls.append(curr_item[0:length-1,:])
-   
+
     #turn the list of rollouts into just one large array of data
     dataX= np.concatenate(new_states, axis=0)
     dataY= np.concatenate(new_controls, axis=0)
@@ -86,6 +88,7 @@ def generate_training_data_outputs(states, which_agent):
     #for each rollout, the output corresponding to each (s_i) is (s_i+1 - s_i)
     differences=[]
     for states_in_single_rollout in states:
+        states_in_single_rollout = np.asarray(states_in_single_rollout)
         output = states_in_single_rollout[1:states_in_single_rollout.shape[0],:] \
                 -states_in_single_rollout[0:states_in_single_rollout.shape[0]-1,:]
         differences.append(output)
@@ -127,7 +130,7 @@ def from_observation_to_usablestate(states, which_agent, just_one):
             #7 leg yaw ccw, 8 leg bend down
             #9, 10
             #11, 12
-            #13,14 
+            #13,14
         #15 to 28 = velocities
         #29 to 37 = rotation matrix (9)
         #38 to 40 = com positions
@@ -154,7 +157,7 @@ def from_observation_to_usablestate(states, which_agent, just_one):
                 body_pos = curr_item[:,38:41]
                 body_rpy = to_euler(curr_item[:,29:38], just_one) #9 vals of rot mat --> 6 vals (cos sin of rpy)
                 body_vel = curr_item[:,41:44]
-                
+
                 full_item = np.concatenate((joint_pos, joint_vel, body_pos, body_rpy, body_vel), axis=1)
                 new_states.append(full_item)
             return new_states
@@ -216,7 +219,7 @@ def from_observation_to_usablestate(states, which_agent, just_one):
     #    fthigh, fshin, ffoot --vel
     # self.model.data.qacc (9)
     # self.model.data.ctrl (6)
-    #OBSERVATION: (24) 
+    #OBSERVATION: (24)
     #    0: rootx (forward/backward)
     #    1: rootz (up/down)
     #    2: rooty (angle of body)
@@ -226,15 +229,15 @@ def from_observation_to_usablestate(states, which_agent, just_one):
     #    6: fthigh
     #    7: fshin
     #    8: ffoot
-    #    9: root x vel 
-    #    10: root z vel 
-    #    11: root y vel 
+    #    9: root x vel
+    #    10: root z vel
+    #    11: root y vel
     #    12: bthigh vel
     #    13: bshin vel
     #    14: bfoot vel
-    #    15: fthigh vel 
-    #    16: fshin vel 
-    #    17: ffoot vel 
+    #    15: fthigh vel
+    #    16: fshin vel
+    #    17: ffoot vel
     #com x
     #com y
     #com z
@@ -256,7 +259,7 @@ def from_observation_to_usablestate(states, which_agent, just_one):
         # com velocity
         # orientation angular vel
         # 2 motor vel
-    
+
     elif(which_agent==5):
         if(just_one):
             curr_item = np.copy(states)
@@ -300,7 +303,7 @@ def from_observation_to_usablestate(states, which_agent, just_one):
     #######################################
     ######### WALKER ######################
     #######################################
-    
+
     #observation: 24 things
         #9 joint pos
         #9 velocities

@@ -43,7 +43,6 @@ def zero_mean_unit_std(dataX):
 def run_task(v):
         env, _ = create_env(v["which_agent"])
         fw_learning_rate = v['fw_learning_rate'] # 0.0005!
-
         yaml_path = os.path.abspath('yaml_files/'+v['yaml_file']+'.yaml')
         assert(os.path.exists(yaml_path))
         with open(yaml_path, 'r') as f:
@@ -55,12 +54,16 @@ def run_task(v):
         print_minimal= v['print_minimal']
         nEpoch = params['dyn_model']['nEpoch']
         save_dir = 'logs/' + v['exp_name']
-        inputSize = env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
-        outputSize = env.spec.observation_space.flat_dim
+        #inputSize =params['dyn_model']['input_shape']
+        #outputSize =params['dyn_model']['output_shape']
+
+        inputSize = env.observation_space.shape #env.spec.action_space.flat_dim + env.spec.observation_space.flat_dim
+        outputSize = env.action_space.shape#env.spec.observation_space.flat_dim
+
 
         #Initialize the forward policy
-        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64))
-                 #learn_std=False, #v['learn_std'],
+        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64), learn_std=False)
+                 ##, #v['learn_std'],
                  #adaptive_std=False, #v['adaptive_std'],
                  #output_gain=1, #v['output_gain'],
                  #init_std=1) #v['polic)
@@ -188,7 +191,10 @@ def run_task(v):
             #Not all parts of the state are actually used.
             states = from_observation_to_usablestate(selected_observations_list, v["which_agent"], False)
             controls = selected_actions_list
+            #import ipdb
+            #ipdb.set_trace()
             dataX , dataY = generate_training_data_inputs(states, controls)
+
             states = np.asarray(states)
             dataZ = generate_training_data_outputs(states, v['which_agent'])
 
@@ -225,9 +231,9 @@ def run_task(v):
                     state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
                                                                        mean_x, mean_y, mean_z, std_x, std_y, std_z)
 
-                    if outer_iter * v["num_trpo_iters"] <= 60:
+                    #if outer_iter * v["num_trpo_iters"] <= 60:
                         #Incorporate the backwards trace into model based system.
-                        fw_func(np.vstack(state_list), np.vstack(action_list))
+                    fw_func(np.vstack(state_list), np.vstack(action_list))
                     #print("Immitation Learning loss", loss)
             else:
                 print('running TRPO baseline')
@@ -266,14 +272,14 @@ batch_size = 50000
 
 steps_per_rollout = args.steps_per_rollout
 if(args.which_agent==1):
-	num_trpo_iters = 2500
+    num_trpo_iters = 2500
 if(args.which_agent==2):
-	steps_per_rollout=333
-	num_trpo_iters = 500
+    steps_per_rollout=333
+    num_trpo_iters = 500
 if(args.which_agent==4):
-	num_trpo_iters= 2500
+    num_trpo_iters= 2500
 if(args.which_agent==6):
-	num_trpo_iters= 2000
+    num_trpo_iters= 2000
 
 num_trpo_iters = args.num_trpo_iters
 

@@ -13,6 +13,8 @@ dyn_model:
     lr: 0.001
     nEpoch: 20
     fraction_use_new: 0.5
+    input_shape: 41
+    output_shape: 8
 
 controller:
     horizon: 5
