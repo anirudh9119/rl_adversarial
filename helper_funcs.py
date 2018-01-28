@@ -1,7 +1,7 @@
 import copy
 import time
 import tensorflow as tf
-import numpy as np 
+import numpy as np
 
 #import rllab envs
 from rllab.envs.normalized_env import normalize
@@ -10,8 +10,7 @@ from rllab.envs.mujoco.half_cheetah_env import HalfCheetahEnv
 from rllab.envs.mujoco.hopper_env import HopperEnv
 from rllab.envs.mujoco.walker2d_env import Walker2DEnv
 from point_env import PointEnv
-from rllab.envs.mujoco.ant_env import AntEnv
-
+from rllab.envs.mujoco.ant_fwbw_env import AntEnv
 #import gym envs
 import gym
 from gym import wrappers
@@ -28,7 +27,7 @@ def add_noise(data_inp, noiseToSignal):
             data[:,j] = np.copy(data[:,j]+np.random.normal(0, np.absolute(std_of_noise[j]), (data.shape[0],)))
     return data
 
-def perform_rollouts(policy, num_rollouts, steps_per_rollout, visualize_rollouts, CollectSamples, 
+def perform_rollouts(policy, num_rollouts, steps_per_rollout, visualize_rollouts, CollectSamples,
                     env, which_agent, dt_steps, dt_from_xml, follow_trajectories):
     #collect training data by performing rollouts
     print("Beginning to do ", num_rollouts, " rollouts.")
@@ -49,7 +48,7 @@ def create_env(which_agent):
     elif(which_agent==2):
         env = normalize(SwimmerEnv()) #dt 0.001 and frameskip=150
     elif(which_agent==3):
-        env = ReacherEnv() 
+        env = ReacherEnv()
     elif(which_agent==4):
         env = normalize(HalfCheetahEnv())
     elif(which_agent==5):
