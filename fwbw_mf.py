@@ -63,7 +63,7 @@ def run_task(v):
         #import ipdb
         #ipdb.set_trace()
         #Initialize the forward policy
-        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64), learn_std=False)
+        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64), learn_std=True)
                  ##, #v['learn_std'],
                  #adaptive_std=False, #v['adaptive_std'],
                  #output_gain=1, #v['output_gain'],
