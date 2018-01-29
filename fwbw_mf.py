@@ -63,7 +63,7 @@ def run_task(v):
         #import ipdb
         #ipdb.set_trace()
         #Initialize the forward policy
-        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64), learn_std=True)
+        policy = GaussianMLPPolicy(env_spec=env.spec, hidden_sizes=(64, 64), learn_std=False)
                  ##, #v['learn_std'],
                  #adaptive_std=False, #v['adaptive_std'],
                  #output_gain=1, #v['output_gain'],
@@ -208,15 +208,6 @@ def run_task(v):
             outputs = np.copy(dataZ)
             assert inputs.shape[0] == outputs.shape[0]
 
-            if v['num_imagination_steps'] == 10:
-                nEpoch = 20
-            elif v['num_imagination_steps'] == 50:
-                nEpoch = 20
-            elif v['num_imagination_steps'] == 100:
-                nEpoch = 30
-            else:
-                nEpoch = 20
-
             nEpoch = v['nEpoch']
 
             training_loss = dyn_model.train(inputs, outputs, inputs, outputs, nEpoch, save_dir, 1)
@@ -231,9 +222,8 @@ def run_task(v):
                     state_list, action_list = dyn_model.do_forward_sim(forwardsim_x_true, v['num_imagination_steps'], False, env, v['which_agent'],
                                                                        mean_x, mean_y, mean_z, std_x, std_y, std_z)
 
-                    #if outer_iter * v["num_trpo_iters"] <= 100:
-                        #Incorporate the backwards trace into model based system.
-                    fw_func(np.vstack(state_list), np.vstack(action_list))
+                    if outer_iter * v["num_trpo_iters"] <= 100:
+                        fw_func(np.vstack(state_list), np.vstack(action_list))
                     #print("Immitation Learning loss", loss)
             else:
                 print('running TRPO baseline')
