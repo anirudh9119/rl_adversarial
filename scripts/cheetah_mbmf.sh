@@ -4,6 +4,8 @@
 ## SET VARS
 #####################################
 
+source activate rllab3
+
 #location of all saved trpo runs
 trpo_dir='/home/anagabandi/rllab/data/local/experiment/'
 
